@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<!-- historias.html — SALA DE CINE. NO LA EDITES A MANO: la genera tests/hacer-historias.js a partir de index.html
+     (mismos scripts, en el mismo orden) + js/sala-cine.js. Lo comprueba tests/smoke.js, CINE-8. -->
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <!-- iOS/movil: app a pantalla completa "Anadir a pantalla de inicio". -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Lord Falcon">
+  <meta name="theme-color" content="#0b1020">
+  <meta name="format-detection" content="telephone=no">
+  <!-- App instalable en el móvil (v3.1): manifiesto, iconos y modo sin conexión (js/movil.js + sw.js). -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="iconos/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="iconos/favicon-32.png">
+  <title>Sala de cine — El Rescate de Lord Falcon</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #0b1020;
+      color: #cbd5e1;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      /* Sin rebote/scroll de arrastre en moviles. */
+      overscroll-behavior: none;
+      /* iOS: sin seleccion de texto, menu de copiar ni resaltado azul al tocar. */
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #wrap {
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      box-sizing: border-box;
+      padding: 12px;
+    }
+    /* El canvas mantiene 16:9 (960x540) y ocupa el maximo posible. */
+    #game {
+      display: block;
+      width: auto;
+      height: auto;
+      max-width: 100vw;
+      max-height: calc(100vh - 60px);
+      aspect-ratio: 16 / 9;
+      background: #0b1020;
+      border-radius: 8px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+      /* Pixel art nitido al escalar. */
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      -ms-interpolation-mode: nearest-neighbor;
+      /* El canvas gestiona sus propios gestos tactiles (sin scroll/zoom). */
+      touch-action: none;
+      /* iOS: sin seleccion, menu de copiar ni resaltado azul al tocar el juego. */
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #footer {
+      font-size: 14px;
+      color: #94a3b8;
+      text-align: center;
+      user-select: none;
+    }
+
+    /* Aviso "Gira el dispositivo": oculto por defecto. */
+    #rotate {
+      display: none;
+    }
+    /* Solo en dispositivos tactiles (pointer: coarse), en vertical y pequenios.
+       Sin pointer:coarse saldria tambien en ventanas estrechas de escritorio. */
+    @media (orientation: portrait) and (max-width: 900px) and (pointer: coarse) {
+      #rotate {
+        display: flex;
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 24px;
+        background: #0b1020;
+        color: #e2e8f0;
+        text-align: center;
+        padding: 24px;
+        box-sizing: border-box;
+      }
+      /* El juego se oculta mientras se pide girar (evita jugar en vertical). */
+      #wrap { visibility: hidden; }
+    }
+    #rotate .phone {
+      width: 64px;
+      height: 108px;
+      border: 5px solid #7dd3fc;
+      border-radius: 14px;
+      animation: rotatePhone 2.2s ease-in-out infinite;
+    }
+    #rotate .msg {
+      font-size: 20px;
+      font-weight: bold;
+      max-width: 280px;
+      line-height: 1.4;
+    }
+    /* Móvil o tablet en horizontal (v3.1): el juego ocupa TODA la pantalla,
+       sin pie ni márgenes, respetando el notch y la barra del navegador (dvh). */
+    @media (pointer: coarse) and (orientation: landscape) {
+      html, body { overflow: hidden; }
+      #wrap {
+        height: 100%;
+        min-height: 0;
+        gap: 0;
+        padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+      }
+      #game {
+        width: min(calc(100vw - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)), calc((100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) * 16 / 9));
+        width: min(calc(100vw - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)), calc((100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) * 16 / 9));
+        height: auto;
+        max-width: none;
+        max-height: none;
+        border-radius: 0;
+        box-shadow: none;
+      }
+      #footer { display: none; }
+    }
+    @keyframes rotatePhone {
+      0%, 20%   { transform: rotate(0deg); }
+      50%, 70%  { transform: rotate(-90deg); }
+      100%      { transform: rotate(-90deg); }
+    }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <canvas id="game" width="960" height="540"></canvas>
+    <div id="footer">Sala de cine: las historias animadas de las Partes 1, 2 y 3 — M silencio · <a href="index.html" style="color:#93c5fd">volver al juego</a></div>
+  </div>
+
+  <!-- Aviso en vertical: gira el dispositivo (solo CSS, sin recursos externos). -->
+  <div id="rotate">
+    <div class="phone"></div>
+    <div class="msg">Gira el dispositivo para jugar</div>
+  </div>
+
+  <!-- Orden EXACTO del contrato tecnico (Parte 3, §1). Sin recursos externos. -->
+  <script src="js/core.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/gfx.js"></script>
+  <script src="js/p2/arte-base.js"></script>
+  <script src="js/p2/arte-enemigos.js"></script>
+  <script src="js/p2/arte-drones.js"></script>
+  <script src="js/p2/arte-transformable.js"></script>
+  <script src="js/p2/arte-mechahalcon.js"></script>
+  <script src="js/p2/arte-fusion.js"></script>
+  <script src="js/p2/arte-escenarios.js"></script>
+  <script src="js/p3/arte-heroes.js"></script>
+  <script src="js/p3/arte-robovill.js"></script>
+  <script src="js/p3/arte-vehiculos.js"></script>
+  <script src="js/p3/arte-fusiones.js"></script>
+  <script src="js/p3/arte-jefes.js"></script>
+  <script src="js/p3/datos-arte3.js"></script>
+  <script src="js/p3/arte-escenarios3.js"></script>
+  <script src="js/p3/arte-poses3.js"></script>
+  <script src="js/p2/estado2.js"></script>
+  <script src="js/p3/estado3.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/platformer.js"></script>
+  <script src="js/levels.js"></script>
+  <script src="js/space.js"></script>
+  <script src="js/boss.js"></script>
+  <script src="js/p2/enemigos2.js"></script>
+  <script src="js/p2/plataformas2.js"></script>
+  <script src="js/p2/niveles2.js"></script>
+  <script src="js/p2/carrera.js"></script>
+  <script src="js/p2/vuelo.js"></script>
+  <script src="js/p2/jefe2.js"></script>
+  <script src="js/p2/historia2.js"></script>
+  <script src="js/p2/ui2.js"></script>
+  <script src="js/p3/enemigos3.js"></script>
+  <script src="js/p3/plataformas3.js"></script>
+  <script src="js/p3/jefes3.js"></script>
+  <script src="js/p3/niveles3.js"></script>
+  <script src="js/p3/moto.js"></script>
+  <script src="js/p3/rio.js"></script>
+  <script src="js/p3/gigantes3.js"></script>
+  <script src="js/p3/gigantes-jefes3.js"></script>
+  <script src="js/p3/historia3.js"></script>
+  <script src="js/p3/ui3.js"></script>
+  <script src="js/cine.js"></script>
+  <script src="js/cine/s_captura.js"></script>
+  <script src="js/cine/parte1-a.js"></script>
+  <script src="js/cine/parte1-b.js"></script>
+  <script src="js/cine/parte2-a.js"></script>
+  <script src="js/cine/parte2-b.js"></script>
+  <script src="js/cine/parte3-a.js"></script>
+  <script src="js/cine/parte3-b.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/movil.js"></script>
+  <script src="js/p2/depuracion.js"></script>
+  <!-- Sala de cine: misma carga que index.html + la sala (se abre sola). -->
+  <script>window.SALA_CINE = true;</script>
+  <script src="js/sala-cine.js"></script>
+</body>
+</html>
